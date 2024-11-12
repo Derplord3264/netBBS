@@ -15,14 +15,17 @@
         <button type="submit">Send</button>
     </form>
     <div id="adminMessage" style="color: #ffcc00;"></div>
+    <h2>Online Users</h2>
+    <ul id="onlineUsers"></ul> <!-- List of online users -->
 
     <script>
         const channelId = 'sOYK5ZfGFkt6e82I'; // Your channel ID
-        const drone = new Scaledrone(channelId);
+        const drone = new ScaleDrone(channelId);
         const messages = document.getElementById('messages');
         const form = document.getElementById('messageForm');
         const input = document.getElementById('messageInput');
         const adminMessage = document.getElementById('adminMessage');
+        const onlineUsersList = document.getElementById('onlineUsers');
 
         const adminUsername = 'admin'; // Hardcoded admin username
         const adminPassword = 'password'; // Hardcoded admin password
@@ -47,10 +50,29 @@
         });
 
         const room = drone.subscribe('observable-room');
+        
         room.on('message', (message) => {
             console.log('Message received:', message.data);
             addMessageToList(message.data);
             scrollToBottom(); // Scroll to bottom on new message
+        });
+
+        room.on('members', memberList => {
+            // Update users set and display online users
+            memberList.forEach(member => {
+                users.add(member.clientData.username); // Assuming each user has 'username' in clientData
+            });
+            updateOnlineUsers();
+        });
+
+        room.on('member_join', member => {
+            users.add(member.clientData.username);
+            updateOnlineUsers();
+        });
+
+        room.on('member_leave', member => {
+            users.delete(member.clientData.username);
+            updateOnlineUsers();
         });
 
         form.addEventListener('submit', (e) => {
@@ -92,20 +114,6 @@
             }
         }
 
-        function sendMessageAndDisconnect(user, message) {
-            const kickMessage = `${user} has been removed from the chat.`;
-            addMessageToList(kickMessage);
-            // Notify the kicked user
-            drone.publish({
-                room: 'observable-room',
-                message: message,
-            });
-
-            // Remove user from online list and disconnect (simulation)
-            users.delete(user);
-            updateOnlineUsers();
-        }
-
         function addMessageToList(message) {
             const item = document.createElement('li');
             item.textContent = message;
@@ -121,7 +129,13 @@
         }
 
         function updateOnlineUsers() {
-            addMessageToList(`Admin has joined the chat.`);
+            onlineUsersList.innerHTML = ''; // Clear existing list
+            users.forEach(user => {
+                const userItem = document.createElement('li');
+                userItem.textContent = user; // Display username
+                onlineUsersList.appendChild(userItem);
+            });
+            addMessageToList(`Online users updated: ${Array.from(users).join(', ')}`);
         }
 
         // Cookie management functions
