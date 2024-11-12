@@ -55,6 +55,10 @@
             background-color: #00ff00;
             color: black;
         }
+        #adminPanel {
+            display: none; /* Initially hidden */
+            margin-top: 20px;
+        }
     </style>
 </head>
 <body>
@@ -65,15 +69,61 @@
         <button type="submit">Send</button>
     </form>
 
+    <div id="adminPanel">
+        <h2>Admin Commands</h2>
+        <input id="adminCommandInput" placeholder="Enter admin command here..." />
+        <button id="executeCommandButton">Execute</button>
+        <div id="adminMessage" style="color: #ffcc00;"></div>
+    </div>
+
     <script>
         const channelId = 'sOYK5ZfGFkt6e82I'; // Your channel ID
         const drone = new Scaledrone(channelId);
         const messages = document.getElementById('messages');
         const form = document.getElementById('messageForm');
         const input = document.getElementById('messageInput');
+        const adminPanel = document.getElementById('adminPanel');
+        const adminCommandInput = document.getElementById('adminCommandInput');
+        const executeCommandButton = document.getElementById('executeCommandButton');
+        const adminMessage = document.getElementById('adminMessage');
+
+        let users = new Set(); // Set to track online users
+        const bannedUsers = new Set(); // Set to track banned users
+        const adminUsername = 'admin'; // Hardcoded admin username
+        const adminPassword = 'password'; // Hardcoded admin password
 
         // Prompt for username
-        const username = prompt("Enter your username:") || "Anonymous";
+        let username = prompt("Enter your username:") || "Anonymous";
+
+        // Prevent admin username from being used
+        if (username.toLowerCase() === adminUsername.toLowerCase()) {
+            alert("The username 'admin' is reserved for the administrator.");
+            window.location.reload(); // Reload the page if admin username is used
+        }
+
+        // Check if user is banned
+        if (getCookie(username) === 'banned') {
+            alert("You are banned from this chat.");
+            window.location.reload(); // Reload the page if banned
+        }
+
+        // Add the user to the online list
+        users.add(username);
+        updateOnlineUsers();
+
+        // Admin login
+        const isAdmin = confirm("Are you an admin? Click OK to enter admin credentials.");
+        if (isAdmin) {
+            const inputUsername = prompt("Enter admin username:");
+            const inputPassword = prompt("Enter admin password:");
+            if (inputUsername === adminUsername && inputPassword === adminPassword) {
+                adminPanel.style.display = 'block'; // Show admin panel
+                username = "Admin"; // Change display name to Admin for admin panel
+                addMessageToList(`Admin has joined the chat.`);
+            } else {
+                alert("Invalid admin credentials.");
+            }
+        }
 
         drone.on('open', (error) => {
             if (error) {
@@ -109,6 +159,56 @@
             }
         });
 
+        executeCommandButton.addEventListener('click', () => {
+            const command = adminCommandInput.value.trim();
+            if (command) {
+                handleAdminCommand(command);
+                adminCommandInput.value = ''; // Clear input field
+            }
+        });
+
+        function handleAdminCommand(command) {
+            const parts = command.split(" ");
+            const cmd = parts[0];
+            const targetUser = parts[1];
+            const reason = parts.slice(2).join(" ") || "No reason provided.";
+
+            switch (cmd) {
+                case '/kick':
+                    if (users.has(targetUser)) {
+                        sendMessageAndDisconnect(targetUser, `You have been kicked by an admin for: ${reason}`);
+                    } else {
+                        adminMessage.textContent = `User ${targetUser} not found.`;
+                    }
+                    break;
+                case '/ban':
+                    if (users.has(targetUser)) {
+                        setCookie(targetUser, 'banned', 1); // Set cookie for 1 day
+                        sendMessageAndDisconnect(targetUser, `You have been banned by an admin for: ${reason}`);
+                    } else {
+                        adminMessage.textContent = `User ${targetUser} not found.`;
+                    }
+                    break;
+                default:
+                    adminMessage.textContent = `Unknown command: ${command}`;
+                    break;
+            }
+        }
+
+        function sendMessageAndDisconnect(user, message) {
+            const kickMessage = `${user} has been removed from the chat.`;
+            addMessageToList(kickMessage);
+            // Notify the kicked user
+            drone.publish({
+                room: 'observable-room',
+                message: message,
+            });
+
+            // Remove user from online list and disconnect (simulation)
+            users.delete(user);
+            updateOnlineUsers();
+        }
+
         function addMessageToList(message) {
             const item = document.createElement('li');
             item.textContent = message;
@@ -121,6 +221,29 @@
 
         function scrollToBottom() {
             messages.scrollTop = messages.scrollHeight; // Scroll to the bottom
+        }
+
+        function updateOnlineUsers() {
+            addMessageToList(`User ${username} has joined the chat.`);
+        }
+
+        // Cookie management functions
+        function setCookie(name, value, days) {
+            const date = new Date();
+            date.setTime(date.getTime() + (days * 24 * 60 * 60 * 1000));
+            const expires = "expires=" + date.toUTCString();
+            document.cookie = name + "=" + value + ";" + expires + ";path=/";
+        }
+
+        function getCookie(name) {
+            const nameEQ = name + "=";
+            const ca = document.cookie.split(';');
+            for (let i = 0; i < ca.length; i++) {
+                let c = ca[i];
+                while (c.charAt(0) === ' ') c = c.substring(1, c.length);
+                if (c.indexOf(nameEQ) === 0) return c.substring(nameEQ.length, c.length);
+            }
+            return null;
         }
     </script>
 </body>
