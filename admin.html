@@ -2,11 +2,10 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, content=width=device-width, initial-scale=1.0">
     <title>Admin BBS</title>
     <script src="https://cdn.scaledrone.com/scaledrone.min.js"></script>
     <link rel="stylesheet" href="styles.css"> <!-- Link to CSS file -->
-    <script src="scripts.js" defer></script> <!-- Link to JS file -->
 </head>
 <body>
     <h1>Admin BBS</h1>
@@ -64,7 +63,7 @@
             e.preventDefault();
             const messageToSend = input.value.trim();
             if (messageToSend) {
-                const fullMessage = `Admin: ${messageToSend}`; // Prepend username to message
+                const fullMessage = `Admin: ${messageToSend}`; // Prepend admin label to message
                 console.log('Sending message:', fullMessage);
                 drone.publish({
                     room: 'observable-room',
@@ -96,15 +95,38 @@
 
             switch (cmd) {
                 case '/kick':
-                    // Implement kick logic here
+                    if (users.has(targetUser)) {
+                        sendMessageAndDisconnect(targetUser, `You have been kicked by an admin for: ${reason}`);
+                    } else {
+                        adminMessage.textContent = `User ${targetUser} not found.`;
+                    }
                     break;
                 case '/ban':
-                    // Implement ban logic here
+                    if (users.has(targetUser)) {
+                        setCookie(targetUser, 'banned', 1); // Set cookie for 1 day
+                        sendMessageAndDisconnect(targetUser, `You have been banned by an admin for: ${reason}`);
+                    } else {
+                        adminMessage.textContent = `User ${targetUser} not found.`;
+                    }
                     break;
                 default:
                     adminMessage.textContent = `Unknown command: ${command}`;
                     break;
             }
+        }
+
+        function sendMessageAndDisconnect(user, message) {
+            const kickMessage = `${user} has been removed from the chat.`;
+            addMessageToList(kickMessage);
+            // Notify the kicked user
+            drone.publish({
+                room: 'observable-room',
+                message: message,
+            });
+
+            // Remove user from online list and disconnect (simulation)
+            users.delete(user);
+            updateOnlineUsers();
         }
 
         function addMessageToList(message) {
@@ -119,6 +141,29 @@
 
         function scrollToBottom() {
             messages.scrollTop = messages.scrollHeight; // Scroll to the bottom
+        }
+
+        function updateOnlineUsers() {
+            addMessageToList(`User ${username} has joined the chat.`);
+        }
+
+        // Cookie management functions
+        function setCookie(name, value, days) {
+            const date = new Date();
+            date.setTime(date.getTime() + (days * 24 * 60 * 60 * 1000));
+            const expires = "expires=" + date.toUTCString();
+            document.cookie = name + "=" + value + ";" + expires + ";path=/";
+        }
+
+        function getCookie(name) {
+            const nameEQ = name + "=";
+            const ca = document.cookie.split(';');
+            for (let i = 0; i < ca.length; i++) {
+                let c = ca[i];
+                while (c.charAt(0) === ' ') c = c.substring(1, c.length);
+                if (c.indexOf(nameEQ) === 0) return c.substring(nameEQ.length, c.length);
+            }
+            return null;
         }
     </script>
 </body>
