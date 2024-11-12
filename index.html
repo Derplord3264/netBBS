@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BBS with Scaledrone</title>
+    <script src="https://cdn.scaledrone.com/scaledrone.min.js"></script>
+    <style>
+        body {
+            background-color: black;
+            color: #00ff00; /* Green text */
+            font-family: 'Courier New', Courier, monospace;
+            margin: 0;
+            padding: 20px;
+            line-height: 1.5;
+        }
+        h1 {
+            color: #ffcc00; /* Yellow title */
+            font-size: 24px;
+            margin: 0 0 20px 0;
+        }
+        #messages {
+            list-style-type: none;
+            padding: 0;
+            max-height: 400px; /* Limit height of messages */
+            overflow-y: hidden; /* Hide overflow to create console effect */
+            border: 1px solid #00ff00; /* Green border */
+            padding: 10px;
+            margin-bottom: 20px;
+        }
+        #messages li {
+            padding: 5px;
+            border-bottom: 1px solid #00ff00;
+        }
+        form {
+            display: flex;
+        }
+        input {
+            flex: 1;
+            padding: 10px;
+            border: 1px solid #00ff00;
+            background-color: black;
+            color: #00ff00;
+            font-size: 16px;
+        }
+        button {
+            padding: 10px;
+            border: 1px solid #00ff00;
+            background-color: black;
+            color: #00ff00;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        button:hover {
+            background-color: #00ff00; /* Change button color on hover */
+            color: black; /* Change text color on hover */
+        }
+    </style>
+</head>
+<body>
+    <h1>Web BBS</h1>
+    <ul id="messages"></ul>
+    <form id="messageForm">
+        <input id="messageInput" autocomplete="off" placeholder="Type your message here..." required />
+        <button type="submit">Send</button>
+    </form>
+
+    <script>
+        const channelId = 'sOYK5ZfGFkt6e82I';
+        const drone = new Scaledrone(channelId);
+        const messages = document.getElementById('messages');
+        const form = document.getElementById('messageForm');
+        const input = document.getElementById('messageInput');
+
+        drone.on('open', (error) => {
+            if (error) {
+                return console.error(error);
+            }
+            console.log('Connected to Scaledrone');
+
+            // Request message history
+            drone.history('observable-room', 30, (err, history) => {
+                if (err) {
+                    console.error(err);
+                    return;
+                }
+                history.messages.forEach((message) => {
+                    addMessageToConsole(message.data);
+                });
+                window.scrollTo(0, document.body.scrollHeight);
+            });
+        });
+
+        const room = drone.subscribe('observable-room');
+        room.on('message', (message) => {
+            addMessageToConsole(message.data);
+        });
+
+        form.addEventListener('submit', (e) => {
+            e.preventDefault();
+            if (input.value) {
+                drone.publish({
+                    room: 'observable-room',
+                    message: input.value,
+                });
+                input.value = '';
+            }
+        });
+
+        function addMessageToConsole(message) {
+            const item = document.createElement('li');
+            item.textContent = message;
+            messages.appendChild(item);
+            if (messages.children.length > 20) { // Limit number of messages visible
+                messages.removeChild(messages.firstChild); // Remove the oldest message
+            }
+            messages.scrollTop = messages.scrollHeight; // Scroll to the bottom
+        }
+    </script>
+</body>
+</html>
