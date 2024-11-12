@@ -77,18 +77,6 @@
                 return console.error(error);
             }
             console.log('Connected to Scaledrone');
-
-            // Request message history
-            drone.history('observable-room', 30, (err, history) => {
-                if (err) {
-                    console.error(err);
-                    return;
-                }
-                history.messages.forEach((message) => {
-                    addMessageToList(message.data);
-                });
-                scrollToBottom(); // Scroll after loading history
-            });
         });
 
         const room = drone.subscribe('observable-room');
