@@ -1,0 +1,61 @@
+body {
+    background-color: black;
+    color: #00ff00;
+    font-family: 'Courier New', Courier, monospace;
+    margin: 0;
+    padding: 20px;
+    line-height: 1.5;
+}
+
+h1 {
+    color: #ffcc00;
+    font-size: 24px;
+    margin: 0 0 20px 0;
+}
+
+#messages {
+    list-style-type: none;
+    padding: 0;
+    max-height: 400px; /* Limit height of messages */
+    overflow-y: auto; /* Ensure scrolling is enabled */
+    border: 1px solid #00ff00; /* Green border */
+    padding: 10px;
+    margin-bottom: 20px; /* Space below messages */
+}
+
+#messages li {
+    padding: 5px; /* Space around each message */
+    border-bottom: 1px solid #00ff00; /* Separator between messages */
+}
+
+form {
+    display: flex; /* Flexbox for form layout */
+}
+
+input {
+    flex: 1; /* Allow input to take available space */
+    padding: 10px; /* Padding inside input */
+    border: 1px solid #00ff00; /* Green border */
+    background-color: black; /* Black background for input */
+    color: #00ff00; /* Green text */
+    font-size: 16px; /* Font size */
+}
+
+button {
+    padding: 10px; /* Padding inside button */
+    border: 1px solid #00ff00; /* Green border */
+    background-color: black; /* Black background for button */
+    color: #00ff00; /* Green text for button */
+    cursor: pointer; /* Pointer cursor on hover */
+    font-size: 16px; /* Font size */
+}
+
+button:hover {
+    background-color: #00ff00; /* Change button color on hover */
+    color: black; /* Change text color on hover */
+}
+
+#adminPanel {
+    display: none; /* Initially hidden */
+    margin-top: 20px; /* Space above admin panel */
+}
