@@ -72,6 +72,9 @@
         const form = document.getElementById('messageForm');
         const input = document.getElementById('messageInput');
 
+        // Prompt for username
+        const username = prompt("Enter your username:") || "Anonymous";
+
         drone.on('open', (error) => {
             if (error) {
                 return console.error(error);
@@ -90,15 +93,16 @@
             e.preventDefault();
             const messageToSend = input.value.trim();
             if (messageToSend) {
-                console.log('Sending message:', messageToSend);
+                const fullMessage = `${username}: ${messageToSend}`; // Prepend username to message
+                console.log('Sending message:', fullMessage);
                 drone.publish({
                     room: 'observable-room',
-                    message: messageToSend,
+                    message: fullMessage,
                 }, (err) => {
                     if (err) {
                         console.error('Error sending message:', err);
                     } else {
-                        addMessageToList(messageToSend); // Append sent message
+                        addMessageToList(fullMessage); // Append sent message
                     }
                 });
                 input.value = ''; // Clear input field
