@@ -26,6 +26,7 @@
 
         const adminUsername = 'admin'; // Hardcoded admin username
         const adminPassword = 'password'; // Hardcoded admin password
+
         let users = new Set(); // Set to track online users
 
         // Admin login
@@ -43,7 +44,6 @@
                 return console.error(error);
             }
             console.log('Connected to Scaledrone');
-            addUserToList(username); // Add this user to the online list
         });
 
         const room = drone.subscribe('observable-room');
@@ -58,9 +58,9 @@
             const messageToSend = input.value.trim();
             if (messageToSend) {
                 if (messageToSend.startsWith('/')) {
-                    handleAdminCommand(messageToSend); // Handle command for admin users
+                    handleCommand(messageToSend); // Handle command for admin users
                 } else {
-                    const fullMessage = `Admin: ${messageToSend}`; // Prepend admin label to message
+                    const fullMessage = `bluecherry_: ${messageToSend}`; // Prepend admin label to message
                     console.log('Sending message:', fullMessage);
                     drone.publish({
                         room: 'observable-room',
@@ -77,28 +77,8 @@
             }
         });
 
-        function handleAdminCommand(command) {
-            const parts = command.split(" ");
-            const cmd = parts[0];
-            const targetUser = parts[1];
-            const reason = parts.slice(2).join(" ") || "No reason provided.";
-
-            switch (cmd) {
-                case '/kick':
-                    if (users.has(targetUser)) {
-                        sendMessageAndDisconnect(targetUser, `You have been kicked by an admin for: ${reason}`);
-                    } else {
-                        adminMessage.textContent = `User ${targetUser} not found.`;
-                    }
-                    break;
-                case '/ban':
-                    if (users.has(targetUser)) {
-                        setCookie(targetUser, 'banned', 1); // Set cookie for 1 day
-                        sendMessageAndDisconnect(targetUser, `You have been banned by an admin for: ${reason}`);
-                    } else {
-                        adminMessage.textContent = `User ${targetUser} not found.`;
-                    }
-                    break;
+        function handleCommand(command) {
+            switch (command) {
                 case '/online':
                     const onlineUsersList = Array.from(users).join(', ');
                     addMessageToList(`Online users: ${onlineUsersList}`);
