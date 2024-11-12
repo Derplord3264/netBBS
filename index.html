@@ -66,7 +66,7 @@
     </form>
 
     <script>
-        const channelId = 'sOYK5ZfGFkt6e82I';
+        const channelId = 'sOYK5ZfGFkt6e82I'; // Your channel ID
         const drone = new Scaledrone(channelId);
         const messages = document.getElementById('messages');
         const form = document.getElementById('messageForm');
@@ -100,17 +100,20 @@
 
         form.addEventListener('submit', (e) => {
             e.preventDefault();
-            if (input.value) {
-                console.log('Sending message:', input.value);
+            const messageToSend = input.value.trim();
+            if (messageToSend) {
+                console.log('Sending message:', messageToSend);
                 drone.publish({
                     room: 'observable-room',
-                    message: input.value,
+                    message: messageToSend,
                 }, (err) => {
                     if (err) {
                         console.error('Error sending message:', err);
+                    } else {
+                        addMessageToList(messageToSend); // Append sent message
                     }
                 });
-                input.value = '';
+                input.value = ''; // Clear input field
             }
         });
 
@@ -119,8 +122,9 @@
             item.textContent = message;
             messages.appendChild(item);
             if (messages.children.length > 20) {
-                messages.removeChild(messages.firstChild);
+                messages.removeChild(messages.firstChild); // Keep the list manageable
             }
+            scrollToBottom(); // Scroll to the bottom after adding the message
         }
 
         function scrollToBottom() {
