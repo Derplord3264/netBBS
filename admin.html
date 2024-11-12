@@ -102,8 +102,12 @@
         function handleCommand(command) {
             switch (command) {
                 case '/online':
-                    const onlineUsersList = Array.from(users).join(', ');
-                    addMessageToList(`Online users: ${onlineUsersList}`);
+                    const onlineUsersArray = Array.from(users);
+                    if (onlineUsersArray.length === 0) {
+                        addMessageToList("No users are currently online.");
+                    } else {
+                        addMessageToList(`Online users: ${onlineUsersArray.join(', ')}`);
+                    }
                     break;
                 case '/help':
                     addMessageToList(`Available commands: /online - List online users, /help - List available commands, /kick <username> <reason> - Kick a user, /ban <username> <reason> - Ban a user`);
@@ -135,6 +139,7 @@
                 userItem.textContent = user; // Display username
                 onlineUsersList.appendChild(userItem);
             });
+            // Optionally notify about the update
             addMessageToList(`Online users updated: ${Array.from(users).join(', ')}`);
         }
 
