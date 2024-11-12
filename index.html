@@ -6,7 +6,6 @@
     <title>User BBS</title>
     <script src="https://cdn.scaledrone.com/scaledrone.min.js"></script>
     <link rel="stylesheet" href="styles.css"> <!-- Link to CSS file -->
-    <script src="scripts.js" defer></script> <!-- Link to JS file -->
 </head>
 <body>
     <h1>Web BBS</h1>
@@ -57,21 +56,40 @@
             e.preventDefault();
             const messageToSend = input.value.trim();
             if (messageToSend) {
-                const fullMessage = `${username}: ${messageToSend}`; // Prepend username to message
-                console.log('Sending message:', fullMessage);
-                drone.publish({
-                    room: 'observable-room',
-                    message: fullMessage,
-                }, (err) => {
-                    if (err) {
-                        console.error('Error sending message:', err);
-                    } else {
-                        addMessageToList(fullMessage); // Append sent message
-                    }
-                });
+                if (messageToSend.startsWith('/')) {
+                    handleCommand(messageToSend); // Handle command for normal users
+                } else {
+                    const fullMessage = `${username}: ${messageToSend}`; // Prepend username to message
+                    console.log('Sending message:', fullMessage);
+                    drone.publish({
+                        room: 'observable-room',
+                        message: fullMessage,
+                    }, (err) => {
+                        if (err) {
+                            console.error('Error sending message:', err);
+                        } else {
+                            addMessageToList(fullMessage); // Append sent message
+                        }
+                    });
+                }
                 input.value = ''; // Clear input field
             }
         });
+
+        function handleCommand(command) {
+            switch (command) {
+                case '/online':
+                    const onlineUsersList = Array.from(users).join(', ');
+                    addMessageToList(`Online users: ${onlineUsersList}`);
+                    break;
+                case '/help':
+                    addMessageToList(`Available commands: /online - List online users, /help - List available commands`);
+                    break;
+                default:
+                    addMessageToList(`Unknown command: ${command}`);
+                    break;
+            }
+        }
 
         function addMessageToList(message) {
             const item = document.createElement('li');
