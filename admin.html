@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin BBS</title>
+    <script src="https://cdn.scaledrone.com/scaledrone.min.js"></script>
+    <link rel="stylesheet" href="styles.css"> <!-- Link to CSS file -->
+    <script src="scripts.js" defer></script> <!-- Link to JS file -->
+</head>
+<body>
+    <h1>Admin BBS</h1>
+    <ul id="messages"></ul>
+    <form id="messageForm">
+        <input id="messageInput" autocomplete="off" placeholder="Type your message here..." required />
+        <button type="submit">Send</button>
+    </form>
+
+    <div id="adminPanel">
+        <h2>Admin Commands</h2>
+        <input id="adminCommandInput" placeholder="Enter admin command here..." />
+        <button id="executeCommandButton">Execute</button>
+        <div id="adminMessage" style="color: #ffcc00;"></div>
+    </div>
+
+    <script>
+        const channelId = 'sOYK5ZfGFkt6e82I'; // Your channel ID
+        const drone = new Scaledrone(channelId);
+        const messages = document.getElementById('messages');
+        const form = document.getElementById('messageForm');
+        const input = document.getElementById('messageInput');
+        const adminCommandInput = document.getElementById('adminCommandInput');
+        const executeCommandButton = document.getElementById('executeCommandButton');
+        const adminMessage = document.getElementById('adminMessage');
+
+        const adminUsername = 'admin'; // Hardcoded admin username
+        const adminPassword = 'password'; // Hardcoded admin password
+
+        // Admin login
+        const inputUsername = prompt("Enter admin username:");
+        const inputPassword = prompt("Enter admin password:");
+        if (inputUsername === adminUsername && inputPassword === adminPassword) {
+            console.log('Admin logged in.');
+        } else {
+            alert("Invalid admin credentials.");
+            window.location.href = "index.html"; // Redirect to user panel
+        }
+
+        drone.on('open', (error) => {
+            if (error) {
+                return console.error(error);
+            }
+            console.log('Connected to Scaledrone');
+        });
+
+        const room = drone.subscribe('observable-room');
+        room.on('message', (message) => {
+            console.log('Message received:', message.data);
+            addMessageToList(message.data);
+            scrollToBottom(); // Scroll to bottom on new message
+        });
+
+        form.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const messageToSend = input.value.trim();
+            if (messageToSend) {
+                const fullMessage = `Admin: ${messageToSend}`; // Prepend username to message
+                console.log('Sending message:', fullMessage);
+                drone.publish({
+                    room: 'observable-room',
+                    message: fullMessage,
+                }, (err) => {
+                    if (err) {
+                        console.error('Error sending message:', err);
+                    } else {
+                        addMessageToList(fullMessage); // Append sent message
+                    }
+                });
+                input.value = ''; // Clear input field
+            }
+        });
+
+        executeCommandButton.addEventListener('click', () => {
+            const command = adminCommandInput.value.trim();
+            if (command) {
+                handleAdminCommand(command);
+                adminCommandInput.value = ''; // Clear input field
+            }
+        });
+
+        function handleAdminCommand(command) {
+            const parts = command.split(" ");
+            const cmd = parts[0];
+            const targetUser = parts[1];
+            const reason = parts.slice(2).join(" ") || "No reason provided.";
+
+            switch (cmd) {
+                case '/kick':
+                    // Implement kick logic here
+                    break;
+                case '/ban':
+                    // Implement ban logic here
+                    break;
+                default:
+                    adminMessage.textContent = `Unknown command: ${command}`;
+                    break;
+            }
+        }
+
+        function addMessageToList(message) {
+            const item = document.createElement('li');
+            item.textContent = message;
+            messages.appendChild(item);
+            if (messages.children.length > 20) {
+                messages.removeChild(messages.firstChild); // Keep the list manageable
+            }
+            scrollToBottom(); // Scroll to the bottom after adding the message
+        }
+
+        function scrollToBottom() {
+            messages.scrollTop = messages.scrollHeight; // Scroll to the bottom
+        }
+    </script>
+</body>
+</html>
