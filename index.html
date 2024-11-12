@@ -8,23 +8,23 @@
     <style>
         body {
             background-color: black;
-            color: #00ff00; /* Green text */
+            color: #00ff00;
             font-family: 'Courier New', Courier, monospace;
             margin: 0;
             padding: 20px;
             line-height: 1.5;
         }
         h1 {
-            color: #ffcc00; /* Yellow title */
+            color: #ffcc00;
             font-size: 24px;
             margin: 0 0 20px 0;
         }
         #messages {
             list-style-type: none;
             padding: 0;
-            max-height: 400px; /* Limit height of messages */
-            overflow-y: hidden; /* Hide overflow to create console effect */
-            border: 1px solid #00ff00; /* Green border */
+            max-height: 400px;
+            overflow-y: auto; /* Ensure scrolling is enabled */
+            border: 1px solid #00ff00;
             padding: 10px;
             margin-bottom: 20px;
         }
@@ -52,8 +52,8 @@
             font-size: 16px;
         }
         button:hover {
-            background-color: #00ff00; /* Change button color on hover */
-            color: black; /* Change text color on hover */
+            background-color: #00ff00;
+            color: black;
         }
     </style>
 </head>
@@ -66,7 +66,7 @@
     </form>
 
     <script>
-        const channelId = 'RN8aopcwPNK4KnIp';
+        const channelId = 'sOYK5ZfGFkt6e82I';
         const drone = new Scaledrone(channelId);
         const messages = document.getElementById('messages');
         const form = document.getElementById('messageForm');
@@ -85,35 +85,45 @@
                     return;
                 }
                 history.messages.forEach((message) => {
-                    addMessageToConsole(message.data);
+                    addMessageToList(message.data);
                 });
-                window.scrollTo(0, document.body.scrollHeight);
+                scrollToBottom(); // Scroll after loading history
             });
         });
 
         const room = drone.subscribe('observable-room');
         room.on('message', (message) => {
-            addMessageToConsole(message.data);
+            console.log('Message received:', message.data);
+            addMessageToList(message.data);
+            scrollToBottom(); // Scroll to bottom on new message
         });
 
         form.addEventListener('submit', (e) => {
             e.preventDefault();
             if (input.value) {
+                console.log('Sending message:', input.value);
                 drone.publish({
                     room: 'observable-room',
                     message: input.value,
+                }, (err) => {
+                    if (err) {
+                        console.error('Error sending message:', err);
+                    }
                 });
                 input.value = '';
             }
         });
 
-        function addMessageToConsole(message) {
+        function addMessageToList(message) {
             const item = document.createElement('li');
             item.textContent = message;
             messages.appendChild(item);
-            if (messages.children.length > 20) { // Limit number of messages visible
-                messages.removeChild(messages.firstChild); // Remove the oldest message
+            if (messages.children.length > 20) {
+                messages.removeChild(messages.firstChild);
             }
+        }
+
+        function scrollToBottom() {
             messages.scrollTop = messages.scrollHeight; // Scroll to the bottom
         }
     </script>
