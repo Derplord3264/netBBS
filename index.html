@@ -3,63 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>BBS with Scaledrone</title>
+    <title>User BBS</title>
     <script src="https://cdn.scaledrone.com/scaledrone.min.js"></script>
-    <style>
-        body {
-            background-color: black;
-            color: #00ff00;
-            font-family: 'Courier New', Courier, monospace;
-            margin: 0;
-            padding: 20px;
-            line-height: 1.5;
-        }
-        h1 {
-            color: #ffcc00;
-            font-size: 24px;
-            margin: 0 0 20px 0;
-        }
-        #messages {
-            list-style-type: none;
-            padding: 0;
-            max-height: 400px;
-            overflow-y: auto; /* Ensure scrolling is enabled */
-            border: 1px solid #00ff00;
-            padding: 10px;
-            margin-bottom: 20px;
-        }
-        #messages li {
-            padding: 5px;
-            border-bottom: 1px solid #00ff00;
-        }
-        form {
-            display: flex;
-        }
-        input {
-            flex: 1;
-            padding: 10px;
-            border: 1px solid #00ff00;
-            background-color: black;
-            color: #00ff00;
-            font-size: 16px;
-        }
-        button {
-            padding: 10px;
-            border: 1px solid #00ff00;
-            background-color: black;
-            color: #00ff00;
-            cursor: pointer;
-            font-size: 16px;
-        }
-        button:hover {
-            background-color: #00ff00;
-            color: black;
-        }
-        #adminPanel {
-            display: none; /* Initially hidden */
-            margin-top: 20px;
-        }
-    </style>
+    <link rel="stylesheet" href="styles.css"> <!-- Link to CSS file -->
+    <script src="scripts.js" defer></script> <!-- Link to JS file -->
 </head>
 <body>
     <h1>Web BBS</h1>
@@ -69,28 +16,15 @@
         <button type="submit">Send</button>
     </form>
 
-    <div id="adminPanel">
-        <h2>Admin Commands</h2>
-        <input id="adminCommandInput" placeholder="Enter admin command here..." />
-        <button id="executeCommandButton">Execute</button>
-        <div id="adminMessage" style="color: #ffcc00;"></div>
-    </div>
-
     <script>
         const channelId = 'sOYK5ZfGFkt6e82I'; // Your channel ID
         const drone = new Scaledrone(channelId);
         const messages = document.getElementById('messages');
         const form = document.getElementById('messageForm');
         const input = document.getElementById('messageInput');
-        const adminPanel = document.getElementById('adminPanel');
-        const adminCommandInput = document.getElementById('adminCommandInput');
-        const executeCommandButton = document.getElementById('executeCommandButton');
-        const adminMessage = document.getElementById('adminMessage');
 
         let users = new Set(); // Set to track online users
-        const bannedUsers = new Set(); // Set to track banned users
         const adminUsername = 'admin'; // Hardcoded admin username
-        const adminPassword = 'password'; // Hardcoded admin password
 
         // Prompt for username
         let username = prompt("Enter your username:") || "Anonymous";
@@ -101,29 +35,9 @@
             window.location.reload(); // Reload the page if admin username is used
         }
 
-        // Check if user is banned
-        if (getCookie(username) === 'banned') {
-            alert("You are banned from this chat.");
-            window.location.reload(); // Reload the page if banned
-        }
-
         // Add the user to the online list
         users.add(username);
         updateOnlineUsers();
-
-        // Admin login
-        const isAdmin = confirm("Are you an admin? Click OK to enter admin credentials.");
-        if (isAdmin) {
-            const inputUsername = prompt("Enter admin username:");
-            const inputPassword = prompt("Enter admin password:");
-            if (inputUsername === adminUsername && inputPassword === adminPassword) {
-                adminPanel.style.display = 'block'; // Show admin panel
-                username = "Admin"; // Change display name to Admin for admin panel
-                addMessageToList(`Admin has joined the chat.`);
-            } else {
-                alert("Invalid admin credentials.");
-            }
-        }
 
         drone.on('open', (error) => {
             if (error) {
@@ -159,56 +73,6 @@
             }
         });
 
-        executeCommandButton.addEventListener('click', () => {
-            const command = adminCommandInput.value.trim();
-            if (command) {
-                handleAdminCommand(command);
-                adminCommandInput.value = ''; // Clear input field
-            }
-        });
-
-        function handleAdminCommand(command) {
-            const parts = command.split(" ");
-            const cmd = parts[0];
-            const targetUser = parts[1];
-            const reason = parts.slice(2).join(" ") || "No reason provided.";
-
-            switch (cmd) {
-                case '/kick':
-                    if (users.has(targetUser)) {
-                        sendMessageAndDisconnect(targetUser, `You have been kicked by an admin for: ${reason}`);
-                    } else {
-                        adminMessage.textContent = `User ${targetUser} not found.`;
-                    }
-                    break;
-                case '/ban':
-                    if (users.has(targetUser)) {
-                        setCookie(targetUser, 'banned', 1); // Set cookie for 1 day
-                        sendMessageAndDisconnect(targetUser, `You have been banned by an admin for: ${reason}`);
-                    } else {
-                        adminMessage.textContent = `User ${targetUser} not found.`;
-                    }
-                    break;
-                default:
-                    adminMessage.textContent = `Unknown command: ${command}`;
-                    break;
-            }
-        }
-
-        function sendMessageAndDisconnect(user, message) {
-            const kickMessage = `${user} has been removed from the chat.`;
-            addMessageToList(kickMessage);
-            // Notify the kicked user
-            drone.publish({
-                room: 'observable-room',
-                message: message,
-            });
-
-            // Remove user from online list and disconnect (simulation)
-            users.delete(user);
-            updateOnlineUsers();
-        }
-
         function addMessageToList(message) {
             const item = document.createElement('li');
             item.textContent = message;
@@ -225,25 +89,6 @@
 
         function updateOnlineUsers() {
             addMessageToList(`User ${username} has joined the chat.`);
-        }
-
-        // Cookie management functions
-        function setCookie(name, value, days) {
-            const date = new Date();
-            date.setTime(date.getTime() + (days * 24 * 60 * 60 * 1000));
-            const expires = "expires=" + date.toUTCString();
-            document.cookie = name + "=" + value + ";" + expires + ";path=/";
-        }
-
-        function getCookie(name) {
-            const nameEQ = name + "=";
-            const ca = document.cookie.split(';');
-            for (let i = 0; i < ca.length; i++) {
-                let c = ca[i];
-                while (c.charAt(0) === ' ') c = c.substring(1, c.length);
-                if (c.indexOf(nameEQ) === 0) return c.substring(nameEQ.length, c.length);
-            }
-            return null;
         }
     </script>
 </body>
