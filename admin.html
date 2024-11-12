@@ -11,16 +11,10 @@
     <h1>Admin BBS</h1>
     <ul id="messages"></ul>
     <form id="messageForm">
-        <input id="messageInput" autocomplete="off" placeholder="Type your message here..." required />
+        <input id="messageInput" autocomplete="off" placeholder="Type your message or command here..." required />
         <button type="submit">Send</button>
     </form>
-
-    <div id="adminPanel">
-        <h2>Admin Commands</h2>
-        <input id="adminCommandInput" placeholder="Enter admin command here..." />
-        <button id="executeCommandButton">Execute</button>
-        <div id="adminMessage" style="color: #ffcc00;"></div>
-    </div>
+    <div id="adminMessage" style="color: #ffcc00;"></div>
 
     <script>
         const channelId = 'sOYK5ZfGFkt6e82I'; // Your channel ID
@@ -28,8 +22,6 @@
         const messages = document.getElementById('messages');
         const form = document.getElementById('messageForm');
         const input = document.getElementById('messageInput');
-        const adminCommandInput = document.getElementById('adminCommandInput');
-        const executeCommandButton = document.getElementById('executeCommandButton');
         const adminMessage = document.getElementById('adminMessage');
 
         const adminUsername = 'admin'; // Hardcoded admin username
@@ -63,37 +55,41 @@
             e.preventDefault();
             const messageToSend = input.value.trim();
             if (messageToSend) {
-                const fullMessage = `Admin: ${messageToSend}`; // Prepend admin label to message
-                console.log('Sending message:', fullMessage);
-                drone.publish({
-                    room: 'observable-room',
-                    message: fullMessage,
-                }, (err) => {
-                    if (err) {
-                        console.error('Error sending message:', err);
-                    } else {
-                        addMessageToList(fullMessage); // Append sent message
-                    }
-                });
+                if (messageToSend.startsWith('/')) {
+                    // Handle commands for both admins and users
+                    handleCommand(messageToSend);
+                } else {
+                    const fullMessage = `Admin: ${messageToSend}`; // Prepend admin label to message
+                    console.log('Sending message:', fullMessage);
+                    drone.publish({
+                        room: 'observable-room',
+                        message: fullMessage,
+                    }, (err) => {
+                        if (err) {
+                            console.error('Error sending message:', err);
+                        } else {
+                            addMessageToList(fullMessage); // Append sent message
+                        }
+                    });
+                }
                 input.value = ''; // Clear input field
             }
         });
 
-        executeCommandButton.addEventListener('click', () => {
-            const command = adminCommandInput.value.trim();
-            if (command) {
-                handleAdminCommand(command);
-                adminCommandInput.value = ''; // Clear input field
-            }
-        });
-
-        function handleAdminCommand(command) {
+        function handleCommand(command) {
             const parts = command.split(" ");
             const cmd = parts[0];
             const targetUser = parts[1];
             const reason = parts.slice(2).join(" ") || "No reason provided.";
 
             switch (cmd) {
+                case '/online':
+                    const onlineUsersList = Array.from(users).join(', ');
+                    addMessageToList(`Online users: ${onlineUsersList}`);
+                    break;
+                case '/help':
+                    addMessageToList(`Available commands: /online - List online users, /help - List available commands, /kick <username> <reason> - Kick a user, /ban <username> <reason> - Ban a user`);
+                    break;
                 case '/kick':
                     if (users.has(targetUser)) {
                         sendMessageAndDisconnect(targetUser, `You have been kicked by an admin for: ${reason}`);
